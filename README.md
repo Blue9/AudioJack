@@ -47,3 +47,6 @@ In the rare case that none of the results are appropriate for the requested song
 
 ### Downloading
 After using `audiojack.select()` or `audiojack.custom()`, the MP3 is automatically downloaded and converted in the format `SongTitle.mp3` in the same folder that the program was run in.
+
+## Contributing
+Contributing back to the project is **strongly** suggested, as this helps to keep the project alive and well. Guidelines for contributing will be added soon.
