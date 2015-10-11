@@ -5,7 +5,7 @@ import re
 import youtube_dl
 import musicbrainzngs
 
-from mutagen.id3 import TPE1, TIT2, TALB
+from mutagen.id3 import TPE1, TIT2, TALB, APIC
 from mutagen.mp3 import MP3
 
 opts = {
@@ -16,6 +16,7 @@ opts = {
         'preferredquality': '256'
     }],
 }
+cover_art_dict = {} 
 url = '' 
 artist_title = [] 
 results = [] 
@@ -95,7 +96,19 @@ def valid(recording, release, entry):
         type = release['release-group']['secondary-type-list'][0].lower()
         if type != 'soundtrack' and type != 'remix':
             return False
+    if get_cover_art_as_data(entry[3]) == '':
+        return False
     return True
+
+def get_cover_art_as_data(id):
+    global cover_art_dict
+    if id in cover_art_dict:
+        return cover_art_dict[id]
+    try:
+        cover_art_dict[id] = musicbrainzngs.get_image_front(id).encode('base64')
+    except musicbrainzngs.musicbrainz.ResponseError:
+        cover_art_dict[id] = ''
+    return cover_art_dict[id]
 
 def select(index):
     global title
@@ -103,9 +116,11 @@ def select(index):
     title = selection[1]
     file = '%s.mp3' % title
     download(url, id)
+    img = get_cover_art_as_data(selection[3]).decode('base64')
     tags = MP3(file)
     tags['TPE1'] = TPE1(encoding=3, text=selection[0])
     tags['TIT2'] = TIT2(encoding=3, text=selection[1])
     tags['TALB'] = TALB(encoding=3, text=selection[2])
+    tags['APIC'] = APIC(encoding=3, mime='image/jpeg', type=3, data=img)
     tags.save()
     return file
