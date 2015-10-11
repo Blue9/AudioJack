@@ -124,3 +124,15 @@ def select(index):
     tags['APIC'] = APIC(encoding=3, mime='image/jpeg', type=3, data=img)
     tags.save()
     return file
+
+def custom(artist, custom_title, album):
+    global title
+    title = custom_title;
+    file = '%s.mp3' % title
+    download(url, id)
+    tags = MP3(file)
+    tags['TPE1'] = TPE1(encoding=3, text=artist)
+    tags['TIT2'] = TIT2(encoding=3, text=title)
+    tags['TALB'] = TALB(encoding=3, text=album)
+    tags.save()
+    return file
