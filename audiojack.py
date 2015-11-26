@@ -47,7 +47,9 @@ def download(url, id):
     global title
     if title != '':
         file = '%s.temp' % title # Does not matter what the extension is. FFMpeg will convert it to MP3 anyway.
-        opts['outtmpl'] = file
+    else:
+        file = 'download.temp'
+    opts['outtmpl'] = file
     ydl = youtube_dl.YoutubeDL(opts)
     ydl.download([url])
     return file
@@ -133,7 +135,10 @@ def select(index):
 def custom(artist, custom_title, album):
     '''Custom metadata to be added to the MP3.'''
     global title
-    title = custom_title;
+    if custom_title != '':
+        title = custom_title
+    else:
+        title = 'download'
     file = '%s.mp3' % title
     download(url, id)
     tags = MP3(file)
