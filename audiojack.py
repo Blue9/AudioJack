@@ -46,9 +46,9 @@ def download(url, id):
     global opts
     global title
     if title != '':
-        file = '%s.temp' % title # Does not matter what the extension is. FFMpeg will convert it to MP3 anyway.
+        file = '%s/Downloads/%s.temp' % (os.path.expanduser('~'), title) # Does not matter what the extension is. FFMpeg will convert it to MP3 anyway.
     else:
-        file = 'download.temp'
+        file = '%s/Downloads/download.temp' % os.path.expanduser('~')
     opts['outtmpl'] = file
     ydl = youtube_dl.YoutubeDL(opts)
     ydl.download([url])
@@ -121,7 +121,7 @@ def select(index):
     global title
     selection = results[index]
     title = selection[1]
-    file = '%s.mp3' % title
+    file = '%s/Downloads/%s.mp3' % (os.path.expanduser('~'), title)
     download(url, id)
     img = get_cover_art_as_data(selection[3]).decode('base64')
     tags = MP3(file)
@@ -139,7 +139,7 @@ def custom(artist, custom_title, album):
         title = custom_title
     else:
         title = 'download'
-    file = '%s.mp3' % title
+    file = '%s/Downloads/%s.mp3' % (os.path.expanduser('~'), title)
     download(url, id)
     tags = MP3(file)
     tags['TPE1'] = TPE1(encoding=3, text=artist)
