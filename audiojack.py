@@ -129,7 +129,7 @@ def select(index):
     tags['TIT2'] = TIT2(encoding=3, text=selection[1])
     tags['TALB'] = TALB(encoding=3, text=selection[2])
     tags['APIC'] = APIC(encoding=3, mime='image/jpeg', type=3, data=img)
-    tags.save()
+    tags.save(v2_version=3)
     return file
 
 def custom(artist, custom_title, album):
@@ -145,5 +145,5 @@ def custom(artist, custom_title, album):
     tags['TPE1'] = TPE1(encoding=3, text=artist)
     tags['TIT2'] = TIT2(encoding=3, text=title)
     tags['TALB'] = TALB(encoding=3, text=album)
-    tags.save()
+    tags.save(v2_version=3)
     return file
