@@ -78,7 +78,7 @@ def get_metadata(artist_title):
     results = []
     search_results = musicbrainzngs.search_recordings(recording=artist_title[1], artist=artist_title[0], limit=50)
     for recording in search_results['recording-list']:
-        if artist_title[0] in recording['artist-credit'][0]['artist']['name'] or recording['artist-credit'][0]['artist']['name'] in artist_title[0]:
+        if artist_title[0].replace(' ', '').lower() in recording['artist-credit'][0]['artist']['name'].replace(' ', '').lower() or recording['artist-credit'][0]['artist']['name'].replace(' ', '').lower() in artist_title[0].replace(' ', '').lower():
             if 'release-list' in recording:
                 for release in recording['release-list']:
                     artist = recording['artist-credit'][0]['artist']['name']
