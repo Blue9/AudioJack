@@ -56,7 +56,12 @@ def download(url, id):
 
 def get_artist_title(url_info):
     if url_info['uploader'][0] == '#': # This means it is an official music upload, and the uploader's name will be equivalent to the artist's name.
-        artist_title = [url_info['uploader'], url_info['title']]
+        artist = ''
+        for i, letter in enumerate(url_info['uploader'][1:]):
+            if letter.isupper() and i > 0:
+                artist += ' '
+            artist += letter
+        artist_title = [artist, url_info['title']]
     else:
         title = re.sub(r'\(| \([^)]*\)|\) ', '', url_info['title']) # Remove everything in between parentheses because they could interfere with the search (i.e. remove "official music video" from the video title)
         title = re.sub(r'\[| \[[^\]]*\]|\] ', '', title) # Same as above but with brackets
@@ -78,7 +83,7 @@ def get_metadata(artist_title):
     results = []
     search_results = musicbrainzngs.search_recordings(recording=artist_title[1], artist=artist_title[0], limit=50)
     for recording in search_results['recording-list']:
-        if re.sub(r" |\.|\\|/|\|", "", artist_title[0]).lower() in re.sub(r" |\.|\\|/|\|", "", recording["artist-credit"][0]["artist"]["name"]).lower() or re.sub(r" |\.|\\|/|\|", "", recording["artist-credit"][0]["artist"]["name"]).lower() in re.sub(r" |\.|\\|/|\|", "", artist_title[0]).lower():
+        if re.sub(r' |\.|\\|/|\|', '', artist_title[0]).lower() in re.sub(r' |\.|\\|/|\|', '', recording['artist-credit'][0]['artist']['name']).lower() or re.sub(r' |\.|\\|/|\|', '', recording['artist-credit'][0]['artist']['name']).lower() in re.sub(r' |\.|\\|/|\|', '', artist_title[0]).lower():
             if 'release-list' in recording:
                 for release in recording['release-list']:
                     artist = recording['artist-credit'][0]['artist']['name']
