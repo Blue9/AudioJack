@@ -137,7 +137,7 @@ def select(index):
     tags.save(v2_version=3)
     return file
 
-def custom(artist, custom_title, album):
+def custom(artist, custom_title, album, cover_art=''):
     '''Custom metadata to be added to the MP3.'''
     global title
     if custom_title != '':
@@ -150,5 +150,7 @@ def custom(artist, custom_title, album):
     tags['TPE1'] = TPE1(encoding=3, text=artist)
     tags['TIT2'] = TIT2(encoding=3, text=title)
     tags['TALB'] = TALB(encoding=3, text=album)
+    with open(cover_art, 'rb') as img:
+        tags['APIC'] = APIC(encoding=3, mime='image/jpeg', type=3, data=img.read())
     tags.save(v2_version=3)
     return file
