@@ -166,7 +166,6 @@ def cut_file(file, start_time, end_time):
         pass
     p=Popen(["ffmpeg", "-i", file, "-ss", start_time, "-to", end_time, output], stdout=PIPE)
     p.communicate()
-    print("Cut ffmpeg finshed")
     os.remove(file)
     os.rename(output,file)
     return file
