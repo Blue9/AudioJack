@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 import os
 import re
+import sys
 
 import youtube_dl
 import musicbrainzngs
@@ -44,19 +45,22 @@ def get_results(u):
     results = get_metadata(artist_title)
     return results
 
-def download(url, id):
+def download(url, id, path=None):
     global opts
     global title
+    if not path:
+        path = '%s/Downloads'% os.path.expanduser('~')
     if title != '':
-        file = '%s/Downloads/%s.temp' % (os.path.expanduser('~'), title) # Does not matter what the extension is. FFMpeg will convert it to MP3 anyway.
+        file = '%s/%s.temp' % (path, title) # Does not matter what the extension is. FFMpeg will convert it to MP3 anyway.
     else:
-        file = '%s/Downloads/download.temp' % os.path.expanduser('~')
+        file = '%s/download.temp' % path
     opts['outtmpl'] = file
     ydl = youtube_dl.YoutubeDL(opts)
     ydl.download([url])
     return file
 
 def get_artist_title(url_info):
+    global title
     if url_info['uploader'][0] == '#': # This means it is an official music upload, and the uploader's name will be equivalent to the artist's name.
         artist = ''
         for i, letter in enumerate(url_info['uploader'][1:]):
@@ -105,8 +109,8 @@ def valid(recording, release, entry):
         if word in entry[1].lower() or word in entry[2].lower():
             return False
     if 'secondary-type-list' in release['release-group']:
-        type = release['release-group']['secondary-type-list'][0].lower()
-        if type != 'soundtrack' and type != 'remix':
+        secondary_type = release['release-group']['secondary-type-list'][0].lower()
+        if secondary_type != 'soundtrack' and secondary_type != 'remix':
             return False
     if get_cover_art_as_data(entry[3]) == '':
         return False
@@ -169,3 +173,10 @@ def cut_file(file, start_time, end_time):
     os.remove(file)
     os.rename(output,file)
     return file
+
+if __name__ == '__main__':
+    url = sys.argv[1]
+    set_useragent('App Name', 'Version')
+    results = get_results(url)
+    first_result_id = results[0][3]
+    download(url, first_result_id, '/tmp')
