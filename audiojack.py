@@ -168,7 +168,15 @@ def cut_file(file, start_time, end_time):
         os.remove(output)
     except Exception:
         pass
-    p=Popen(["ffmpeg", "-i", file, "-c:a", "copy", "-ss", start_time, "-to", end_time, output], stdout=PIPE)
+    if not start_time:
+        if not end_time:
+            return file
+        else:
+            p=Popen(["ffmpeg", "-i", file, "-c:a", "copy", "-to", end_time, output], stdout=PIPE)
+    elif not end_time
+        p=Popen(["ffmpeg", "-i", file, "-c:a", "copy", "-ss", start_time, output], stdout=PIPE)
+    else:
+        p=Popen(["ffmpeg", "-i", file, "-c:a", "copy", "-ss", start_time, "-to", end_time, output], stdout=PIPE)
     p.communicate()
     os.remove(file)
     os.rename(output,file)
