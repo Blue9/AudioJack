@@ -9,6 +9,8 @@ import musicbrainzngs
 from mutagen.id3 import TPE1, TIT2, TALB, APIC
 from mutagen.mp3 import MP3
 
+from subprocess import Popen, PIPE
+
 opts = {
     'format': 'bestaudio',
     'postprocessors': [{
@@ -157,6 +159,27 @@ def custom(artist, custom_title, album, cover_art=''):
     with open(cover_art, 'rb') as img:
         tags['APIC'] = APIC(encoding=3, mime='image/jpeg', type=3, data=img.read())
     tags.save(v2_version=3)
+    return file
+    
+def cut_file(file, start_time, end_time):
+    """ Cut the mp3 file with start and end time. """
+    output = file[:-4] + "_cut.mp3"
+    try:
+        os.remove(output)
+    except Exception:
+        pass
+    if not start_time:
+        if not end_time:
+            return file
+        else:
+            p=Popen(["ffmpeg", "-i", file, "-c:a", "copy", "-to", end_time, output], stdout=PIPE)
+    elif not end_time
+        p=Popen(["ffmpeg", "-i", file, "-c:a", "copy", "-ss", start_time, output], stdout=PIPE)
+    else:
+        p=Popen(["ffmpeg", "-i", file, "-c:a", "copy", "-ss", start_time, "-to", end_time, output], stdout=PIPE)
+    p.communicate()
+    os.remove(file)
+    os.rename(output,file)
     return file
 
 if __name__ == '__main__':
