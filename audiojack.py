@@ -118,20 +118,20 @@ def get_cover_art_as_data(id):
 
 def select(entry):
     '''Select the metadata to be added to the MP3.'''
-    if 'title' in entry: 
+    if 'title' in entry and entry['title']: 
         file = '%s/Downloads/%s.mp3' % (os.path.expanduser('~'), entry['title'])
         download(entry['url'], title=entry['title'])
     else:
         file = '%s/Downloads/%s.mp3' % (os.path.expanduser('~'), "download")
         download(entry['url'])
     tags = MP3(file)
-    if 'artist' in entry: 
+    if 'artist' in entry and entry['artist']: 
         tags['TPE1'] = TPE1(encoding=3, text=entry['artist'])
-    if 'title' in entry: 
+    if 'title' in entry and entry['title']: 
         tags['TIT2'] = TIT2(encoding=3, text=entry['title'])
-    if 'album' in entry: 
+    if 'album' in entry and entry['album']: 
         tags['TALB'] = TALB(encoding=3, text=entry['album'])
-    if 'id' in entry:    
+    if 'id' in entry and entry['id']:    
         img = get_cover_art_as_data(entry['id']).decode('base64')
         tags['APIC'] = APIC(encoding=3, mime='image/jpeg', type=3, data=img)
     tags.save(v2_version=3)
