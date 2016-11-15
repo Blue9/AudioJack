@@ -31,10 +31,10 @@ def get_results(url):
     print 'Getting song metadata - this may take a while...'
     return get_metadata(parsed)
 
-def download(url, title, path=None):
+def download(url, title=None, path=None):
     if not path:
         path = '%s/Downloads'% os.path.expanduser('~')
-    if title != '':
+    if title:
         file = '%s/%s.temp' % (path, title) # Does not matter what the extension is. FFMpeg will convert it to MP3 anyway.
     else:
         file = '%s/download.temp' % path
@@ -118,14 +118,22 @@ def get_cover_art_as_data(id):
 
 def select(entry):
     '''Select the metadata to be added to the MP3.'''
-    file = '%s/Downloads/%s.mp3' % (os.path.expanduser('~'), entry['title'])
-    download(entry['url'], entry['title'])
-    img = get_cover_art_as_data(entry['id']).decode('base64')
+    if 'title' in entry and entry['title']: 
+        file = '%s/Downloads/%s.mp3' % (os.path.expanduser('~'), entry['title'])
+        download(entry['url'], title=entry['title'])
+    else:
+        file = '%s/Downloads/%s.mp3' % (os.path.expanduser('~'), "download")
+        download(entry['url'])
     tags = MP3(file)
-    tags['TPE1'] = TPE1(encoding=3, text=entry['artist'])
-    tags['TIT2'] = TIT2(encoding=3, text=entry['title'])
-    tags['TALB'] = TALB(encoding=3, text=entry['album'])
-    tags['APIC'] = APIC(encoding=3, mime='image/jpeg', type=3, data=img)
+    if 'artist' in entry and entry['artist']: 
+        tags['TPE1'] = TPE1(encoding=3, text=entry['artist'])
+    if 'title' in entry and entry['title']: 
+        tags['TIT2'] = TIT2(encoding=3, text=entry['title'])
+    if 'album' in entry and entry['album']: 
+        tags['TALB'] = TALB(encoding=3, text=entry['album'])
+    if 'id' in entry and entry['id']:    
+        img = get_cover_art_as_data(entry['id']).decode('base64')
+        tags['APIC'] = APIC(encoding=3, mime='image/jpeg', type=3, data=img)
     tags.save(v2_version=3)
     return file
 
