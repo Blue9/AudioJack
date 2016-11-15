@@ -50,7 +50,7 @@ def parse(info):
     }
     title = re.sub(r'\(| \([^)]*\)|\) ', '', info['title']) # Remove everything in between parentheses because they could interfere with the search (i.e. remove "official music video" from the video title)
     title = re.sub(r'\[| \[[^\]]*\]|\] ', '', title) # Same as above but with brackets
-    title = re.sub(r'\d*\s?(?i)kbps', '' title)
+    title = re.sub(r'\d*\s?(?i)kbps', '', title)
     banned_words = ['lyrics', 'hd', 'hq', 'free download', 'download', '720p', '1080p'] # Remove all words that could interfere with the search
     for word in banned_words:
         re.sub('(?i)%s' % word, '', title)
