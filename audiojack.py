@@ -48,7 +48,7 @@ def parse(info):
     parsed = {
         'url': info['webpage_url']
     }
-    title = re.sub(r'\(| \([^)]*\)|\) ', '', info['title']) # Remove everything in between parentheses because they could interfere with the search (i.e. remove "official music video" from the video title)
+    title = re.sub(r'\(| \([^)]*\)|\) ', '', info['title']) # Remove everything in between parentheses because they could interfere with the search (i.e. remove 'official music video' from the video title)
     title = re.sub(r'\[| \[[^\]]*\]|\] ', '', title) # Same as above but with brackets
     title = re.sub(r'\d*\s?(?i)kbps', '', title)
     banned_words = ['lyrics', 'hd', 'hq', 'free download', 'download', '720p', '1080p'] # Remove all words that could interfere with the search
@@ -138,8 +138,8 @@ def select(entry):
     return file
 
 def cut_file(file, start_time, end_time):
-    """ Cut the mp3 file with start and end time. """
-    output = '%s.cut' % file[:-4]
+    ''' Cut the mp3 file with start and end time. '''
+    output = '%s_cut.mp3' % file[:-4]
     try:
         os.remove(output)
     except Exception:
@@ -148,11 +148,11 @@ def cut_file(file, start_time, end_time):
         if not end_time:
             return file
         else:
-            p = Popen(["ffmpeg", "-i", file, "-c:a", "copy", "-to", end_time, output], stdout=PIPE)
+            p = Popen(['ffmpeg', '-i', file, '-c:a', 'copy', '-to', end_time, '-id3v2_version', '3', output], stdout=PIPE)
     elif not end_time:
-        p = Popen(["ffmpeg", "-i", file, "-c:a", "copy", "-ss", start_time, output], stdout=PIPE)
+        p = Popen(['ffmpeg', '-i', file, '-c:a', 'copy', '-ss', start_time, '-id3v2_version', '3', output], stdout=PIPE)
     else:
-        p = Popen(["ffmpeg", "-i", file, "-c:a", "copy", "-ss", start_time, "-to", end_time, output], stdout=PIPE)
+        p = Popen(['ffmpeg', '-i', file, '-c:a', 'copy', '-ss', start_time, '-to', end_time, '-id3v2_version', '3', output], stdout=PIPE)
     p.communicate()
     os.remove(file)
     os.rename(output, file)
