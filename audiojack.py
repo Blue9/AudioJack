@@ -92,7 +92,7 @@ def get_metadata(parsed):
                     }
                     if entry not in temp and valid(recording, release, entry, id):
                         temp.append(entry.copy())
-                        entry['id'] = id
+                        entry['img'] = get_cover_art_as_data(id)
                         entry['url'] = parsed['url']
                         results.append(entry)
     return results
@@ -131,8 +131,8 @@ def select(entry):
         tags['TIT2'] = TIT2(encoding=3, text=entry['title'])
     if 'album' in entry and entry['album']: 
         tags['TALB'] = TALB(encoding=3, text=entry['album'])
-    if 'id' in entry and entry['id']:    
-        img = get_cover_art_as_data(entry['id']).decode('base64')
+    if 'img' in entry and entry['img']:    
+        img = entry['img'].decode('base64')
         tags['APIC'] = APIC(encoding=3, mime='image/jpeg', type=3, data=img)
     tags.save(v2_version=3)
     return file
@@ -162,4 +162,7 @@ if __name__ == '__main__':
     url = sys.argv[1]
     set_useragent('AudioJack', '1.0')
     results = get_results(url)
-    download(url, results[0]['title'])
+    if len(results) > 0:
+        select(results[0])
+    else:
+        download(url)
