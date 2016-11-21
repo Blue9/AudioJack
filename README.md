@@ -38,6 +38,10 @@ where "entry" is either an entry dictionary provided by `audiojack.get_results(u
 
     audiojack.select(audiojack.get_results(url)[0])
 
+Optionally, the path to download the .mp3 file may be added, if this is omitted, the file will be placed in your Downloads folder:
+
+    audiojack.select(entry, 'C:\Music')
+
 ### Downloading
 After calling `audiojack.select(entry)`, the MP3 is automatically downloaded and converted in the format `SongTitle.mp3` to the Downloads folder.
 
