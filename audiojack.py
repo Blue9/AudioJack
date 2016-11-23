@@ -1,10 +1,12 @@
 from __future__ import unicode_literals
+
 import os
 import re
 import sys
 from subprocess import Popen, PIPE
-import youtube_dl
+
 import musicbrainzngs
+import youtube_dl
 from mutagen.id3 import TPE1, TIT2, TALB, APIC
 from mutagen.mp3 import MP3
 
@@ -28,7 +30,7 @@ def get_results(url):
         info = info['entries'][0]
     id = info['id']
     parsed = parse(info)
-    print 'Getting song metadata - this may take a while...'
+    print('Getting song metadata - this may take a while...')
     return get_metadata(parsed)
 
 def download(url, title=None, path=None):
@@ -118,12 +120,13 @@ def get_cover_art_as_data(id):
     except musicbrainzngs.musicbrainz.ResponseError:
         return ''
 
-def select(entry):
+
+def select(entry, path=None):
     '''Select the metadata to be added to the MP3.'''
-    if 'title' in entry and entry['title']: 
-        file = download(entry['url'], title=entry['title'])
+    if 'title' in entry and entry['title']:
+        file = download(entry['url'], title=entry['title'], path=path)
     else:
-        file = download(entry['url'])
+        file = download(entry['url'], path=path)
     tags = MP3(file)
     if 'artist' in entry and entry['artist']: 
         tags['TPE1'] = TPE1(encoding=3, text=entry['artist'])
