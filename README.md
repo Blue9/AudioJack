@@ -1,6 +1,9 @@
 # AudioJack
 A smart YouTube to MP3 converter that automatically finds and adds metadata/ID3 tags (artist, title, album, cover art) to downloaded MP3 files.
 
+## Disclaimer
+This program is strictly intended for demonstration purposes. Using this program to download online media may breach the corresponding website's terms of service and may even be illegal in your country. Use this program at your own discretion.
+
 ## Demo
 - [Desktop version](https://github.com/Blue9/AudioJack-GUI)
 - [Web version (Caution: Beta)](http://www.audiojack.io/)
