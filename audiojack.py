@@ -173,7 +173,7 @@ class AudioJack(object):
 
     def _valid(self, release):
         banned_words = ['instrumental', 'best of', 'diss', 'remix', 'what i call', 'ministry of sound']
-        approved_secondary_types = ['soundtrack', 'remix']
+        approved_secondary_types = ['soundtrack', 'remix', 'mixtape/street']
         for word in banned_words:
             if word in release['title'].lower():
                 return False
