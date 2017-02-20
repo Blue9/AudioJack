@@ -1,192 +1,214 @@
 #!/usr/bin/env python
 from __future__ import unicode_literals
-
+import imghdr
 import os
 import re
+import socket
+import subprocess
 import sys
-from subprocess import Popen, PIPE
+import urllib2
+from urlparse import urlparse
 
 import musicbrainzngs
 import youtube_dl
-from mutagen.id3 import TPE1, TIT2, TALB, APIC
-from mutagen.mp3 import MP3
+from mutagen.id3 import ID3, TPE1, TIT2, TALB, APIC
 
-opts = {
-    'format': 'bestaudio',
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-        'preferredquality': '256'
-    }],
-}
+musicbrainzngs.set_useragent(socket.gethostname(), '1.1.1')
 
 
-def set_useragent(name, version):
-    '''Must do this before anything else!!!'''
-    musicbrainzngs.set_useragent(name, version)
+class AudioJack(object):
+    def __init__(self, bitrate=256):
+        self.ydl = youtube_dl.YoutubeDL({
+            'format': 'bestaudio',
+            'outtmpl': '%(id)s.%(ext)s',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': str(bitrate)
+            }]
+        })
+        self._cover_art_cache = {}
 
+    def get_results(self, url):
+        info = self.ydl.extract_info(url, download=False)
+        if 'entries' in info:
+            info = info['entries'][0]
+        return self._get_metadata(self._parse(info))
 
-def get_results(url):
-    '''Start here (after setting user agent).'''
-    ydl = youtube_dl.YoutubeDL(opts)  # object that downloads YouTube/SoundCloud/etc. video
-    info = ydl.extract_info(url, download=False)
-    if 'entries' in info:  # If the URL is a playlist, only retrieve the first video (May change later).
-        info = info['entries'][0]
-    id = info['id']
-    parsed = parse(info)
-    print('Getting song metadata - this may take a while...')
-    return get_metadata(parsed)
+    def select(self, entry, path=None):
+        if 'url' not in entry:
+            raise ValueError('Media URL must be specified.')
+        info = self.ydl.extract_info(entry['url'])
+        file = '%s.mp3' % info['id']
+        tags = ID3()
+        filename = entry['title'] if 'title' in entry else 'download'
+        if 'title' in entry:
+            tags.add(TIT2(encoding=3, text=entry['title']))
+        if 'artist' in entry:
+            tags.add(TPE1(encoding=3, text=entry['artist']))
+        if 'album' in entry:
+            tags.add(TALB(encoding=3, text=entry['album']))
+        if 'img' in entry and entry['img'] != '':
+            scheme = urlparse(entry['img']).scheme
+            img_path = entry['img']
+            if scheme == '':
+                # Local path to absolute path
+                img_path = os.path.abspath(img_path)
+            if scheme[:4] != 'http':
+                # Absolute path to file URI
+                img_path = 'file:///%s' % img_path
+            img_request = urllib2.urlopen(img_path)
+            img = img_request.read()
+            img_request.close()
+            valid_exts = ['jpeg', 'png', 'gif', 'bmp']
+            ext = imghdr.what(None, img)
+            if ext not in valid_exts:
+                raise ValueError('%s is an unsupported file extension.' % ext)
+            else:
+                mime = 'image/%s' % ext
+                tags.add(APIC(encoding=3, mime=mime, type=3, data=img))
+        tags.save(file, v2_version=3)
+        if path:
+            filename = '%s/%s' % (path, filename)
+            if not os.path.exists(path):
+                os.makedirs(path)
+        target_file = '%s.mp3' % filename
+        i = 1
+        while os.path.exists(target_file):
+            target_file = '%s (%d).mp3' % (filename, i)
+            i += 1
+        os.rename(file, target_file)
+        return target_file
 
-
-def download(url, title=None, path=None):
-    if not path:
-        path = '%s/Downloads' % os.path.expanduser('~')
-    if title:
-        main = '%s/%s' % (path, title)  # Does not matter what the extension is. FFMpeg will convert it to MP3 anyway.
-    else:
-        main = '%s/download' % path
-    opts['outtmpl'] = '%s.temp' % main
-    file = '%s.mp3' % main
-    ydl = youtube_dl.YoutubeDL(opts)
-    ydl.download([url])
-    return file
-
-
-def parse(info):
-    parsed = {
-        'url': info['webpage_url']
-    }
-    title = re.sub(r'\(| \([^)]*\)|\) ', '', info[
-        'title'])  # Remove everything in between parentheses because they could interfere with the search (i.e. remove 'official music video' from the video title)
-    title = re.sub(r'\[| \[[^\]]*\]|\] ', '', title)  # Same as above but with brackets
-    title = re.sub(r'\d*\s?(?i)kbps', '', title)
-    banned_words = ['lyrics', 'hd', 'hq', 'free download', 'download', '720p',
-                    '1080p']  # Remove all words that could interfere with the search
-    for word in banned_words:
-        re.sub('(?i)%s' % word, '', title)
-    if info['uploader'][-8:] == ' - Topic' and info['uploader'][:-8] != 'Various Artists':
-        artist = info['uploader'][:-8]
-        parsed['artist'] = artist
-        parsed['title'] = title
-    else:
-        artist_title = re.split(' - | : |- |: ', title)[
-                       :2]  # Most songs are uploaded as ARTIST - TITLE or something similar.
-        parsed['title'] = artist_title[-1]
-        if len(artist_title) == 2:
-            parsed['artist'] = artist_title[0].split(' & ')[0]  # Only get the first artist
+    def cut_file(self, file, start_time=0, end_time=None):
+        # TODO: Fix loss of cover art
+        output = '%s_cut.mp3' % file
+        if end_time:
+            subprocess.Popen(
+                ['ffmpeg', '-i', file, '-ss', str(start_time), '-to', str(end_time), '-c:a', 'copy', '-id3v2_version',
+                 '3', output]).communicate()
         else:
-            parsed['artist'] = ''
-        fts = [' ft.', ' feat.', ' featuring', ' ft', ' feat']
-        for ft in fts:
-            if ft in parsed['artist'].lower():
-                parsed['artist'] = parsed['artist'][:parsed['artist'].lower().find(ft)]
-            if ft in parsed['title'].lower():
-                parsed['title'] = parsed['title'][:parsed['title'].lower().find(ft)]
-    return parsed
+            subprocess.Popen(
+                ['ffmpeg', '-i', file, '-ss', str(start_time), '-c:a', 'copy', '-id3v2_version', '3',
+                 output]).communicate()
+        os.remove(file)
+        os.rename(output, file)
+        return file
 
+    def _parse(self, info):
+        parsed = {
+            'url': info['webpage_url']
+        }
 
-def get_metadata(parsed):
-    temp = []
-    results = []
-    search_results = musicbrainzngs.search_recordings(recording=parsed['title'], artist=parsed['artist'], limit=50)
-    for recording in search_results['recording-list']:
-        if re.sub(r' |\.|\\|/|\|', '', parsed['title']).lower() in re.sub(r' |\.|\\|/|\|', '',
-                                                                          recording['title']).lower() or re.sub(
-                r' |\.|\\|/|\|', '', recording['title']).lower() in re.sub(r' |\.|\\|/|\|', '',
-                                                                           parsed['title']).lower():
+        banned_words = ['lyrics', 'hd', 'hq', 'free download', 'download', '1080p', 'official music video', 'm/v']
+        feats = ['featuring', 'feat.', 'ft.', 'feat', 'ft']
+        artist_delimiters = [',', 'x', '&', 'and']
+
+        video_title = info['title']
+        video_title = re.sub(r'\([^)]*|\)|\[[^]]*|\]', '', video_title).strip()  # Remove parentheses and brackets
+        video_title = re.sub(self._gen_regex(banned_words), ' ', video_title).strip()  # Remove banned words
+        parsed_title = re.split(r'\W*[\-:] \W*', video_title)  # 'Artist - Title' => ['Artist', 'Title']
+
+        title = self._split(parsed_title[-1], feats)  # 'Song feat. Some Guy' => ['Song', 'Some Guy']
+        parsed['title'] = title[0]
+        secondary_artist_list = title[1:]
+
+        if info['uploader'][-8:] == ' - Topic' and info['uploader'][:-8] != 'Various Artists':
+            parsed['artists'] = [info['uploader'][:-8]]
+
+        elif len(parsed_title) > 1:
+            artists = self._split(parsed_title[-2], feats)  # 'A1 and A2 feat. B1' => ['A1 and A2', 'B1']
+            parsed['artists'] = self._split(artists[0], artist_delimiters)  # 'A1 and A2' => ['A1', 'A2']
+            secondary_artist_list.extend(artists[1:])
+
+        if len(secondary_artist_list) > 0:
+            # Each string in the secondary_artist_list is split according to the artist delimiters.
+            # Each of the newly created lists are then flattened into a single list (see self._flatten).
+            parsed['secondary_artists'] = self._multi_split(secondary_artist_list, artist_delimiters)
+        return parsed
+
+    def _get_metadata(self, parsed):
+        results = []
+        temp = []
+        artists = parsed['artists'] if 'artists' in parsed else None
+        artist = artists[0] if artists else ''
+        artistname = artists[1] if artists and len(artists) > 1 else ''
+        mb_results = musicbrainzngs.search_recordings(query=parsed['title'], artist=artist, artistname=artistname,
+                                                      limit=20)
+        for recording in mb_results['recording-list']:
             if 'release-list' in recording:
-                for release in recording['release-list']:
-                    artist = recording['artist-credit'][0]['artist']['name']
-                    title = recording['title']
-                    album = release['title']
-                    id = release['id']
-                    entry = {
-                        'artist': artist,
-                        'title': title,
-                        'album': album,
-                    }
-                    if entry not in temp and valid(recording, release, entry, id):
-                        temp.append(entry.copy())
-                        entry['img'] = get_cover_art_as_data(id)
-                        entry['url'] = parsed['url']
-                        results.append(entry)
-    return results
+                title = recording['title']
+                if ('artists' not in parsed or title.lower() == parsed['title'].lower()) and self._valid_title(title):
+                    artists = [a['artist']['name'] for a in recording['artist-credit'] if
+                               isinstance(a, dict) and 'artist' in a]
+                    artist = artists[0]  # Only use the first artist (may change in the future)
+                    for release in recording['release-list']:
+                        album = release['title']
+                        album_id = release['id']
+                        entry = {
+                            'url': parsed['url'],
+                            'title': title,
+                            'artist': artist,
+                            'album': album
+                        }
+                        if entry not in temp and self._valid(release):
+                            temp.append(entry.copy())
+                            entry['id'] = album_id
+                            entry['img'] = self._cover_art_cache[
+                                album_id] if album_id in self._cover_art_cache else self._get_cover_art(album_id)
+                            results.append(entry)
+        return results
 
+    def _flatten(self, lst):
+        return [item for sublist in lst for item in sublist]
 
-def valid(recording, release, entry, id):
-    '''Checks to make sure the result is not an instrumental, remix, compilation, etc. Also requires cover art for the song to be deemed valid.'''
-    banned = ['instrumental', 'best of', 'diss', 'remix', '2015', '2016', '2k15', '2k16', 'what i call',
-              'ministry of sound']
-    for word in banned:
-        if word in entry['title'].lower() or word in entry['album'].lower():
+    def _gen_regex(self, word_list):
+        return r'(?:^|\W)*?(?i)(?:%s)\W*' % '|'.join(word_list)
+
+    def _split(self, string, delimiters):
+        return re.split(self._gen_regex(delimiters), string)
+
+    def _multi_split(self, lst, delimiters):
+        return self._flatten([self._split(item, delimiters) for item in lst])
+
+    def _valid(self, release):
+        banned_words = ['instrumental', 'best of', 'diss', 'remix', 'what i call', 'ministry of sound']
+        approved_secondary_types = ['soundtrack', 'remix']
+        for word in banned_words:
+            if word in release['title'].lower():
+                return False
+        if 'secondary-type-list' in release['release-group']:
+            st = release['release-group']['secondary-type-list'][0].lower()
+            if st not in approved_secondary_types:
+                return False
+        if not self._get_cover_art(release['id']):
             return False
-    if 'secondary-type-list' in release['release-group']:
-        secondary_type = release['release-group']['secondary-type-list'][0].lower()
-        if secondary_type != 'soundtrack' and secondary_type != 'remix':
-            return False
-    if get_cover_art_as_data(id) == '':
-        return False
-    return True
+        return True
 
+    def _valid_title(self, title):
+        banned_words = ['remix', 'instrumental', 'a cappella', 'remake']
+        for word in banned_words:
+            if word in title.lower():
+                return False
+        return True
 
-def get_cover_art_as_data(id):
-    '''Gets cover art as binary data if not already stored.'''
-    try:
-        return musicbrainzngs.get_image_front(id).encode('base64')
-    except musicbrainzngs.musicbrainz.ResponseError:
-        return ''
-
-
-def select(entry, path=None):
-    '''Select the metadata to be added to the MP3.'''
-    if 'title' in entry and entry['title']:
-        file = download(entry['url'], title=entry['title'], path=path)
-    else:
-        file = download(entry['url'], path=path)
-    tags = MP3(file)
-    if 'artist' in entry and entry['artist']:
-        tags['TPE1'] = TPE1(encoding=3, text=entry['artist'])
-    if 'title' in entry and entry['title']:
-        tags['TIT2'] = TIT2(encoding=3, text=entry['title'])
-    if 'album' in entry and entry['album']:
-        tags['TALB'] = TALB(encoding=3, text=entry['album'])
-    if 'img' in entry and entry['img']:
-        img = entry['img'].decode('base64')
-        tags['APIC'] = APIC(encoding=3, mime='image/jpeg', type=3, data=img)
-    tags.save(v2_version=3)
-    return file
-
-
-def cut_file(file, start_time, end_time):
-    ''' Cut the mp3 file with start and end time. '''
-    output = '%s_cut.mp3' % file[:-4]
-    try:
-        os.remove(output)
-    except Exception:
-        pass
-    if not start_time:
-        if not end_time:
-            return file
-        else:
-            p = Popen(['ffmpeg', '-i', file, '-c:a', 'copy', '-to', end_time, '-id3v2_version', '3', output],
-                      stdout=PIPE)
-    elif not end_time:
-        p = Popen(['ffmpeg', '-i', file, '-c:a', 'copy', '-ss', start_time, '-id3v2_version', '3', output], stdout=PIPE)
-    else:
-        p = Popen(
-            ['ffmpeg', '-i', file, '-c:a', 'copy', '-ss', start_time, '-to', end_time, '-id3v2_version', '3', output],
-            stdout=PIPE)
-    p.communicate()
-    os.remove(file)
-    os.rename(output, file)
-    return file
+    def _get_cover_art(self, album_id):
+        try:
+            if album_id in self._cover_art_cache:
+                return self._cover_art_cache[album_id]
+            else:
+                self._cover_art_cache[album_id] = musicbrainzngs.get_image_list(album_id)['images'][0]['image']
+                return self._cover_art_cache[album_id]
+        except musicbrainzngs.musicbrainz.ResponseError:
+            return None
 
 
 if __name__ == '__main__':
+    aj = AudioJack()
     url = sys.argv[1]
-    set_useragent('AudioJack', '1.0')
-    results = get_results(url)
+    results = aj.get_results(url)
     if len(results) > 0:
-        select(results[0])
+        download = aj.select(results[0])
     else:
-        download(url)
+        download = aj.select({'url': url})
+    print 'Downloaded %s' % download
