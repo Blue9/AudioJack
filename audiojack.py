@@ -41,7 +41,7 @@ class AudioJack(object):
         info = self.ydl.extract_info(entry['url'])
         file = '%s.mp3' % info['id']
         tags = ID3()
-        filename = entry['title'] if 'title' in entry else 'download'
+        filename = entry['title'] if 'title' in entry and entry['title'] else 'download'
         if 'title' in entry:
             tags.add(TIT2(encoding=3, text=entry['title']))
         if 'artist' in entry:
