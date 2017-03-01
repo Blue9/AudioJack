@@ -6,7 +6,6 @@ This program is strictly intended for demonstration purposes. Using this program
 
 ## Demo
 - [Desktop version](https://github.com/Blue9/AudioJack-GUI)
-- [Web version (Caution: Beta)](http://www.audiojack.io/)
 
 ## Requirements
 1. Python 2.7
