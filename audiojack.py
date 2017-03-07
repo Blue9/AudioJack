@@ -17,7 +17,7 @@ musicbrainzngs.set_useragent(socket.gethostname(), '1.1.1')
 
 
 class AudioJack(object):
-    def __init__(self, bitrate=256):
+    def __init__(self, bitrate=256, small_cover_art=False):
         self.ydl = youtube_dl.YoutubeDL({
             'format': 'bestaudio',
             'outtmpl': '%(id)s.%(ext)s',
@@ -27,6 +27,7 @@ class AudioJack(object):
                 'preferredquality': str(bitrate)
             }]
         })
+        self.small_cover_art = small_cover_art
         self._cover_art_cache = {}
 
     def get_results(self, url):
@@ -198,7 +199,11 @@ class AudioJack(object):
             if album_id in self._cover_art_cache:
                 return self._cover_art_cache[album_id]
             else:
-                self._cover_art_cache[album_id] = musicbrainzngs.get_image_list(album_id)['images'][0]['image']
+                if self.small_cover_art:
+                    self._cover_art_cache[album_id] = musicbrainzngs.get_image_list(album_id)['images'][0]['thumbnails'][
+                        'small']
+                else:
+                    self._cover_art_cache[album_id] = musicbrainzngs.get_image_list(album_id)['images'][0]['image']
                 return self._cover_art_cache[album_id]
         except musicbrainzngs.musicbrainz.ResponseError:
             return None
