@@ -43,7 +43,7 @@ class AudioJack(object):
         file = '%s.mp3' % info['id']
         tags = ID3()
         filename = entry['title'] if 'title' in entry and entry['title'] else 'download'
-        filename = re.sub(r'\W*[^a-zA-Z\d\s]\W*', ' ', filename)
+        filename = re.sub(r'\W*[^a-zA-Z\d\s]\W*', '_', filename)
         if 'title' in entry:
             tags.add(TIT2(encoding=3, text=entry['title']))
         if 'artist' in entry:
