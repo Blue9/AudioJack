@@ -80,7 +80,7 @@ class AudioJack(object):
             target_file = '%s (%d).mp3' % (filename, i)
             i += 1
         os.rename(file, target_file)
-        return target_file
+        return os.path.realpath(target_file)
 
     def cut_file(self, file, start_time=0, end_time=None):
         # TODO: Fix loss of cover art
