@@ -83,8 +83,11 @@ class AudioJack(object):
         return os.path.realpath(target_file)
 
     def cut_file(self, file, start_time=0, end_time=None):
-        # TODO: Fix loss of cover art
         output = '%s_cut.mp3' % file
+        # Export cover art temporarily
+        ca = '%s_ca.jpg' % file
+        subprocess.Popen(['ffmpeg', '-i', file, ca]).communicate()
+        # Cut file
         if end_time:
             subprocess.Popen(
                 ['ffmpeg', '-i', file, '-ss', str(start_time), '-to', str(end_time), '-c:a', 'copy', '-id3v2_version',
@@ -93,8 +96,12 @@ class AudioJack(object):
             subprocess.Popen(
                 ['ffmpeg', '-i', file, '-ss', str(start_time), '-c:a', 'copy', '-id3v2_version', '3',
                  output]).communicate()
-        os.remove(file)
-        os.rename(output, file)
+        # Add cover art back
+        subprocess.Popen(
+            ['ffmpeg', '-y', '-i', output, '-i', ca, '-map', '0:0', '-map', '1:0', '-c', 'copy', '-id3v2_version', '3',
+             file]).communicate()
+        os.remove(output)
+        os.remove(ca)
         return file
 
     def _parse(self, info):
