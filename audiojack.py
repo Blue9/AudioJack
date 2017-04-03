@@ -201,8 +201,8 @@ class AudioJack(object):
             else:
                 if self.small_cover_art:
                     self._cover_art_cache[album_id] = \
-                    musicbrainzngs.get_image_list(album_id)['images'][0]['thumbnails'][
-                        'small']
+                        musicbrainzngs.get_image_list(album_id)['images'][0]['thumbnails'][
+                            'small']
                 else:
                     self._cover_art_cache[album_id] = musicbrainzngs.get_image_list(album_id)['images'][0]['image']
                 return self._cover_art_cache[album_id]
