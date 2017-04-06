@@ -103,3 +103,9 @@ $RECYCLE.BIN/
 # Downloaded files
 *.mp3
 *.temp
+
+# Binary files
+*.exe
+
+# IDE files
+.idea/

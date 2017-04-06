@@ -17,8 +17,8 @@ musicbrainzngs.set_useragent(socket.gethostname(), '1.1.1')
 
 
 class AudioJack(object):
-    def __init__(self, bitrate=256, small_cover_art=False):
-        self.ydl = youtube_dl.YoutubeDL({
+    def __init__(self, bitrate=256, small_cover_art=False, quiet=False):
+        self.opts = {
             'format': 'bestaudio',
             'outtmpl': '%(id)s.%(ext)s',
             'postprocessors': [{
@@ -26,7 +26,11 @@ class AudioJack(object):
                 'preferredcodec': 'mp3',
                 'preferredquality': str(bitrate)
             }]
-        })
+        }
+        if quiet:
+            self.opts['quiet'] = 1
+            self.opts['no_warnings'] = 1
+        self.ydl = youtube_dl.YoutubeDL(self.opts)
         self.small_cover_art = small_cover_art
         self._cover_art_cache = {}
 
@@ -218,7 +222,7 @@ class AudioJack(object):
 
 
 if __name__ == '__main__':
-    aj = AudioJack()
+    aj = AudioJack(quiet=True)
     url = sys.argv[1]
     results = aj.get_results(url)
     if len(results) > 0:
