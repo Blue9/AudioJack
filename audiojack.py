@@ -151,7 +151,8 @@ class AudioJack(object):
         for recording in mb_results['recording-list']:
             if 'release-list' in recording:
                 title = recording['title']
-                if ('artists' not in parsed or title.lower() == parsed['title'].lower()) and self._valid_title(title):
+                if ('artists' not in parsed or re.sub(r'\W', '', title.lower()) == re.sub(r'\W', '', parsed[
+                    'title'].lower())) and self._valid_title(title):
                     artists = [a['artist']['name'] for a in recording['artist-credit'] if
                                isinstance(a, dict) and 'artist' in a]
                     artist = artists[0]  # Only use the first artist (may change in the future)
