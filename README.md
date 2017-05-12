@@ -8,7 +8,7 @@ This program is strictly intended for demonstration purposes. Using this program
 - [Desktop version](https://github.com/Blue9/AudioJack-GUI)
 
 ## Requirements
-1. Python 2.7
+1. Python 3.6+
 2. [FFmpeg](https://www.ffmpeg.org/) (for MP3 conversion).  
 3. In addition, you will need to install the following modules before using AudioJack:
  - [mutagen](https://bitbucket.org/lazka/mutagen)
