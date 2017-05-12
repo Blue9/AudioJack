@@ -1,13 +1,13 @@
 #!/usr/bin/env python
-from __future__ import unicode_literals
+
 import imghdr
 import os
 import re
 import socket
 import subprocess
 import sys
-import urllib2
-from urlparse import urlparse
+import urllib.request, urllib.error, urllib.parse
+from urllib.parse import urlparse
 
 import musicbrainzngs
 import youtube_dl
@@ -63,7 +63,7 @@ class AudioJack(object):
             if scheme[:4] != 'http':
                 # Absolute path to file URI
                 img_path = 'file:///%s' % img_path
-            img_request = urllib2.urlopen(img_path)
+            img_request = urllib.request.urlopen(img_path)
             img = img_request.read()
             img_request.close()
             valid_exts = ['jpeg', 'png', 'gif', 'bmp']
@@ -230,4 +230,4 @@ if __name__ == '__main__':
         download = aj.select(results[0])
     else:
         download = aj.select({'url': url})
-    print 'Downloaded %s' % download
+    print('Downloaded %s' % download)
