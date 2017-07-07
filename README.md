@@ -5,7 +5,7 @@ A smart YouTube to MP3 converter that automatically finds and adds metadata/ID3 
 This program is strictly intended for demonstration purposes. Using this program to download online media may breach the corresponding website's terms of service and may even be illegal in your country. Use this program at your own discretion.
 
 ## Demo
-- [Desktop version](https://github.com/Blue9/AudioJack-GUI)
+- [GUI version](https://github.com/Blue9/AudioJack-GUI)
 
 ## Requirements
 1. Python 3.6+
@@ -24,7 +24,7 @@ Before doing anything, you must set a user agent for your application. This will
 ### Retrieving metadata for a song
 To retrieve the metadata for a particular URL, use **AudioJack**'s `get_results(url)` function.
 
-    audiojack.get_results("URL goes here")
+    audiojack.get_results('URL goes here')
 This will return a list of entries as dictionaries, in the format `{'artist': artist, 'title': title, 'album': album, 'url': url, 'id': 'musicbrainz id'}`.  
 Example results list:
 
@@ -42,7 +42,7 @@ where "entry" is either an entry dictionary provided by `audiojack.get_results(u
 
 Optionally, the path to download the .mp3 file to may be added, however if this is omitted, the file will be placed in your Downloads folder:
 
-    audiojack.select(entry, 'C:\Music')
+    audiojack.select(entry, path='C:\Music')
 
 ### Downloading
 After calling `audiojack.select(entry)`, the MP3 is automatically downloaded and converted in the format `SongTitle.mp3` to the Downloads folder or your set path.
